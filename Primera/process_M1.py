@@ -1,18 +1,13 @@
 from PIL import Image
 import cv2
 import matplotlib.pyplot as plt
+import numpy as np
+
+from facenet_pytorch import MTCNN
 import torch
-from facenet_pytorch import MTCNN, InceptionResnetV1
 import os
 import time
-
-import numpy as np
 import psutil
-# DIRECTORIOS MIGUEL
-#directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\input\Humans'
-#output_directory = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Boxes'
-#output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Vectors'
-
 
 # DIRECTORIOS EDU
 directorio_raiz = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Input_Prueba'
@@ -20,6 +15,7 @@ output_directory = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Ou
 output_directory_vectors = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Vectors'
 
 archivos = [archivo for archivo in os.listdir(directorio_raiz) if archivo.endswith('.jpg')]
+
 
 # Iniciar el cronómetro
 tiempo_inicio = time.time()
@@ -29,7 +25,10 @@ contador = 1
 
 # DETECTAR CARA
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-print('Running on device(process.py): {}'.format(device))
+print('Running on device: (process_M1) {}'.format(device))
+
+# Lista para almacenar el uso de la CPU a lo largo del tiempo
+cpu_percent_history = []
 
 for imagen_nombre in archivos:
     try:
@@ -75,18 +74,18 @@ for imagen_nombre in archivos:
             plt.savefig(ruta_guardado)
             plt.close()  # Cerrar la figura para liberar memoria
 
-            # VECTORIZAR
-            encoder = InceptionResnetV1(pretrained='vggface2', classify=False, device=device).eval()
-            cara = mtcnn(img)
-            if cara is not None:  # Verificar si se detectó una cara
-                embedding_cara = encoder.forward(cara.reshape((1, 3, 160, 160))).detach().cpu()
-                nombre_archivo_vector = f'vector_{contador}.txt'
-                ruta_guardado_vector = os.path.join(output_directory_vectors, nombre_archivo_vector)
+            # VECTORIZAR con NumPy (reemplazando InceptionResnetV1)
+            cara_np = np.array(img)  # Convertir imagen a arreglo NumPy
+            cara_flat = cara_np.flatten()  # Aplanar el arreglo
 
-                with open(ruta_guardado_vector, 'w') as file:
-                    for valor in embedding_cara.numpy().flatten():
-                        file.write(f'{valor} ')
-            
+            # Guardar el vector en un archivo de texto
+            nombre_archivo_vector = f'vector_{contador}.txt'
+            ruta_guardado_vector = os.path.join(output_directory_vectors, nombre_archivo_vector)
+
+            with open(ruta_guardado_vector, 'w') as file:
+                for valor in cara_flat:
+                    file.write(f'{valor} ')
+
             # Incrementar el contador
             contador += 1
 
@@ -94,13 +93,9 @@ for imagen_nombre in archivos:
         print(f'Error en la imagen {imagen_nombre}: {str(e)}')
         continue  # Continuar con la siguiente imagen en caso de error
 
-vectores_embeddings = []
-
-for i in range(len(vectores_embeddings)):
-    for j in range(i + 1, len(vectores_embeddings)):
-        distancia_euclidiana = np.linalg.norm(vectores_embeddings[i] - vectores_embeddings[j])
-        print(f'Distancia entre vector {i+1} y vector {j+1}: {distancia_euclidiana}')
-
+    # Registrar el uso de la CPU cada segundo
+    cpu_percent = psutil.cpu_percent(interval=1)
+    cpu_percent_history.append(cpu_percent)
 
 # Detener el cronómetro
 tiempo_fin = time.time()
@@ -109,28 +104,11 @@ tiempo_fin = time.time()
 tiempo_total = tiempo_fin - tiempo_inicio
 print(f'Tiempo total de ejecución: {tiempo_total:.2f} segundos')
 
-
-cpu_percent_history = []
-tiempo_history = []
-
-# Obtener el uso de la CPU al finalizar
-cpu_percent_final = psutil.cpu_percent()
-
-# Obtener la historia del uso de la CPU durante la ejecución
-for segundo in range(int(tiempo_total) + 1):
-    cpu_percent = psutil.cpu_percent(interval=1)
-    cpu_percent_history.append(cpu_percent)
-    tiempo_history.append(segundo)
-
-# Crear un gráfico de línea
-fig, ax1 = plt.subplots()
-
-# Graficar la tendencia del uso de la CPU a lo largo del tiempo
-ax1.plot(tiempo_history, cpu_percent_history, label='Uso de CPU', color='tab:blue', marker='o')
-ax1.set_xlabel('Tiempo (segundos)')
-ax1.set_ylabel('Uso de CPU (%)', color='tab:blue')
-ax1.tick_params(axis='y', labelcolor='tab:blue')
-
-# Mostrar el gráfico
+# Crear un gráfico de líneas para el uso de CPU a lo largo del tiempo
+tiempo_history = list(range(len(cpu_percent_history)))
+plt.plot(tiempo_history, cpu_percent_history, label='Uso de CPU', color='tab:blue', marker='o')
+plt.xlabel('Tiempo (segundos)')
+plt.ylabel('Uso de CPU (%)')
 plt.title('Tendencia del Uso de CPU a lo largo del Tiempo')
+plt.legend()
 plt.show()
