@@ -9,7 +9,7 @@ import time
 import numpy as np
 import psutil
 # DIRECTORIOS MIGUEL
-#directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\input\Humans'
+#directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
 #output_directory = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Boxes'
 #output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Vectors'
 
