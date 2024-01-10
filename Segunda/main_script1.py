@@ -1,13 +1,12 @@
 import time
 import psutil
 import os
-import matplotlib.pyplot as plt
 import torch
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from PIL import Image
 import numpy as np
 from mpi4py import MPI
-import cProfile
+import matplotlib.pyplot as plt
 import pstats
 
 def get_cpu_usage():
@@ -17,13 +16,12 @@ def get_memory_usage():
     process = psutil.Process(os.getpid())
     return process.memory_info().rss / (1024 ** 2)  # Uso de memoria en MB
 
-def main_process(start_time, rank):
-    archivos = [archivo for archivo in os.listdir(directorio_raiz)]
-    contador = 1
+def process_images(images, start_time, rank, comm):
     uso_cpu = []
     uso_memoria = []
     time_data = []
-    
+    contador=1
+
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     print(f'Running on device(process.py, rank {rank}): {device}')
     mtcnn = MTCNN(
@@ -38,7 +36,7 @@ def main_process(start_time, rank):
 
     vectors = []
 
-    for imagen_nombre in archivos:
+    for imagen_nombre in images:
         print(f'Procesando: {imagen_nombre}')
         try:
             elapsed_time = time.time() - start_time
@@ -74,9 +72,15 @@ def main_process(start_time, rank):
             print(f'Error en la imagen {imagen_nombre}: {str(e)}')
             continue
 
+    if rank == 0:
+        uso_cpu = comm.gather(uso_cpu, root=0)
+        uso_memoria = comm.gather(uso_memoria, root=0)
+        time_data = comm.gather(time_data, root=0)
+
     print(f'Total de imágenes procesadas por proceso {rank}: {len(vectors)}')
     print(f'Tiempo total de ejecución del proceso {rank}: {time.time() - start_time} segundos')
     print(f'Memoria utilizada por proceso {rank}: {get_memory_usage()} MB')
+    
     return uso_cpu, uso_memoria, time_data
 
 if __name__ == "__main__":
@@ -84,19 +88,23 @@ if __name__ == "__main__":
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    directorio_raiz = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Segunda\Input_Prueba'
-    output_directory_vectors = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Segunda\Output_Prueba\Vectors'
+    # directorio_raiz = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Input_Prueba'
+    # output_directory = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Boxes'
+    # output_directory_vectors = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Vectors'
+    # ruta_plot = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\cpu_usage.png'
+
+    directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
+    output_directory = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba'
+    output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba\Vectors'
+    ruta_plot = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba'
 
     cpu_usage_data = []
     memory_usage_data = []
     time_data = []
     start_time = time.time()
-    print("Comienzo\n")
-    profiler = cProfile.Profile()
-    profiler.enable()
+    profiler = None
 
     try:
-        comm.Barrier()
         if rank == 0:
             archivos = [archivo for archivo in os.listdir(directorio_raiz)]
             archivos_por_proceso = [archivos[i::size] for i in range(size)]
@@ -104,33 +112,36 @@ if __name__ == "__main__":
             archivos_por_proceso = None
 
         archivos_por_proceso = comm.scatter(archivos_por_proceso, root=0)
-        cpu_usage_data, memory_usage_data, time_data = main_process(start_time, rank)
-        cpu_usage_data = comm.gather(cpu_usage_data, root=0)
-        memory_usage_data = comm.gather(memory_usage_data, root=0)
-        time_data = comm.gather(time_data, root=0)
-            
+        cpu_usage_data_per_process, memory_usage_data_per_process, time_data_per_process = process_images(
+            archivos_por_proceso, start_time, rank, comm
+        )
+
+        if rank == 0:
+            cpu_usage_data = [item for sublist in cpu_usage_data_per_process for item in sublist]
+            memory_usage_data = [item for sublist in memory_usage_data_per_process for item in sublist]
+            time_data = [item for sublist in time_data_per_process for item in sublist]
+
+            plt.figure(figsize=(20, 10))
+            plt.subplot(1, 2, 1)
+            plt.plot(time_data, cpu_usage_data, label='Uso de CPU')
+            plt.xlabel('Tiempo (segundos)')
+            plt.ylabel('Uso de CPU (%)')
+            plt.title('Rendimiento de la CPU durante la ejecución del proceso principal')
+            plt.legend()
+
+            plt.subplot(1, 2, 2)
+            plt.plot(time_data, memory_usage_data, label='Uso de Memoria')
+            plt.xlabel('Tiempo (segundos)')
+            plt.ylabel('Uso de Memoria (MB)')
+            plt.title('Rendimiento de la Memoria durante la ejecución del proceso principal')
+            plt.legend()
+
+            plt.tight_layout()
+            plt.savefig(ruta_plot)
+
+            profiler.disable()
+            stats = pstats.Stats(profiler)
+            stats.sort_stats('cumulative').print_stats(20)
+
     except KeyboardInterrupt:
         pass
-
-    finally:
-        plt.figure(figsize=(20, 10))
-        plt.subplot(1, 2, 1)
-        plt.plot(time_data, cpu_usage_data, label='Uso de CPU')
-        plt.xlabel('Tiempo (segundos)')
-        plt.ylabel('Uso de CPU (%)')
-        plt.title('Rendimiento de la CPU durante la ejecución del proceso principal')
-        plt.legend()
-
-        plt.subplot(1, 2, 2)
-        plt.plot(time_data, memory_usage_data, label='Uso de Memoria')
-        plt.xlabel('Tiempo (segundos)')
-        plt.ylabel('Uso de Memoria (MB)')
-        plt.title('Rendimiento de la Memoria durante la ejecución del proceso principal')
-        plt.legend()
-
-        plt.tight_layout()
-        plt.savefig(r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Segunda\Output_Prueba\performance_parallel1.png')
-
-        profiler.disable()
-        stats = pstats.Stats(profiler)
-        stats.sort_stats('cumulative').print_stats(20)
