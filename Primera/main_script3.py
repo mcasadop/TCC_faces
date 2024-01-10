@@ -91,8 +91,11 @@ def main_process(tiempo_comienzo):
 
 
 if __name__ == "__main__":
-    directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
-    output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Vectors'
+   # directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
+   # output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Vectors'
+    directorio_raiz = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Input_Prueba'
+    output_directory_vectors = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Vectors'
+
     cpu_usage_data = []
     memory_usage_data = []
     time_data = []
@@ -128,7 +131,7 @@ if __name__ == "__main__":
         plt.legend()
 
         plt.tight_layout()
-        plt.savefig(r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba\performance_comparison3.png')
+        plt.savefig(r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\performance_comparison3.png')
 
         profiler.disable()
         stats = pstats.Stats(profiler)

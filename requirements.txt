@@ -3,3 +3,5 @@ facenet-pytorch
 numpy
 Pillow
 opencv-python
+psutil
+mpi4py

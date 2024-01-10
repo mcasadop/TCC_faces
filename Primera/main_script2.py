@@ -96,9 +96,12 @@ def main_process(tiempo_comienzo):
 
 
 if __name__ == "__main__":
-    directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
-    output_directory = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Boxes'
-    output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Vectors'
+    # directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
+    # output_directory = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Boxes'
+    # output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Vectors'
+    directorio_raiz = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Input_Prueba'
+    output_directory = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Boxes'
+    output_directory_vectors = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Vectors'
     cpu_usage_data = []
     memory_usage_data = []
     time_data = []
@@ -117,7 +120,7 @@ if __name__ == "__main__":
 
     finally:
         # Gráfico comparativo de tiempos de ejecución y uso de CPU
-        plt.figure(figsize=(10, 5))
+        plt.figure(figsize=(20, 10))
         plt.subplot(1, 2, 1)
         plt.plot(time_data, cpu_usage_data, label='Uso de CPU')
         plt.xlabel('Tiempo (segundos)')
@@ -134,7 +137,7 @@ if __name__ == "__main__":
         plt.legend()
 
         plt.tight_layout()
-        plt.savefig(r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba\performance_comparison2.png')
+        plt.savefig(r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\performance_comparison2.png')
 
         profiler.disable()
         stats = pstats.Stats(profiler)
