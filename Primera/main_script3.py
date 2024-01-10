@@ -91,10 +91,15 @@ def main_process(tiempo_comienzo):
 
 
 if __name__ == "__main__":
-   # directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
-   # output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\output\Vectors'
-    directorio_raiz = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Input_Prueba'
-    output_directory_vectors = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Vectors'
+   # directorio_raiz = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Input_Prueba'
+    # output_directory = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Boxes'
+    # output_directory_vectors = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Vectors'
+    # ruta_plot = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\cpu_usage.png'
+
+    directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
+    output_directory = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba'
+    output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba\Vectors'
+    ruta_plot = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba'
 
     cpu_usage_data = []
     memory_usage_data = []
@@ -131,7 +136,7 @@ if __name__ == "__main__":
         plt.legend()
 
         plt.tight_layout()
-        plt.savefig(r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\performance_comparison3.png')
+        plt.savefig(ruta_plot)
 
         profiler.disable()
         stats = pstats.Stats(profiler)
