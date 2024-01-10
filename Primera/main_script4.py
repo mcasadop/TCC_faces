@@ -11,7 +11,7 @@ import pstats
 
 
 def get_cpu_usage():
-    return psutil.cpu_percent(interval=0.1)  # Intervalo de muestreo de 0.1 segundos
+    return psutil.cpu_percent(interval=1)  # Intervalo de muestreo de 1 segundo
 
 
 def get_memory_usage():
@@ -22,7 +22,6 @@ def get_memory_usage():
 def main_process(tiempo_comienzo):
     archivos = [archivo for archivo in os.listdir(directorio_raiz)]
     contador = 1
-    vectors = []
     uso_cpu = []
     uso_memoria = []
     time_data = []
@@ -30,15 +29,9 @@ def main_process(tiempo_comienzo):
     # DETECTAR CARA
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     print('Running on device(process.py): {}'.format(device))
-    mtcnn = MTCNN(
-        select_largest=True,
-        min_face_size=20,
-        thresholds=[0.6, 0.7, 0.7],
-        post_process=False,
-        image_size=160,
-        device=device
-    )
-    encoder = InceptionResnetV1(pretrained='vggface2', classify=False, device=device).eval()
+    
+
+    vectors = []
 
     for imagen_nombre in archivos:
         print(f'Procesando: {imagen_nombre}')
@@ -56,48 +49,41 @@ def main_process(tiempo_comienzo):
 
             # Abrir la imagen
             img = Image.open(ruta_imagen)
+            mtcnn = MTCNN(
+                select_largest=True,
+                min_face_size=20,
+                thresholds=[0.6, 0.7, 0.7],
+                post_process=False,
+                image_size=160,
+                device=device
+            )
+            encoder = InceptionResnetV1(pretrained='vggface2', classify=False, device=device).eval()
 
             # VECTORIZAR
             cara = mtcnn(img)
             if cara is not None:  # Verificar si se detectó una cara
                 embedding_cara = encoder.forward(cara.reshape((1, 3, 160, 160))).detach().cpu()
                 vectors.append(embedding_cara)
+
+                # Comparar con los vectores previamente generados
+                for i in range(len(vectors) - 1):
+                    distancia_euclidiana = np.linalg.norm(vectors[i] - embedding_cara)
+                    print(f'Distancia entre vector {i+1} y vector {contador}: {distancia_euclidiana}')
+
+                # Guardar el vector en el archivo
                 nombre_archivo_vector = f'vector_{contador}.txt'
                 ruta_guardado_vector = os.path.join(output_directory_vectors, nombre_archivo_vector)
 
                 with open(ruta_guardado_vector, 'w') as file:
                     for valor in embedding_cara.numpy().flatten():
                         file.write(f'{valor} ')
-                
+
                 # Incrementar el contador
                 contador += 1
-                
-        except ValueError as e:
-            # Manejar el error específico relacionado con canales de la imagen
-            print(f'Error en la imagen {imagen_nombre}: {str(e)}')
-            
-            # Eliminar la imagen problemática
-            ruta_imagen = os.path.join(directorio_raiz, imagen_nombre)
-            os.remove(ruta_imagen)
-
-            continue  # Continuar con la siguiente imagen después de eliminarla
 
         except Exception as e:
             print(f'Error en la imagen {imagen_nombre}: {str(e)}')
             continue  # Continuar con la siguiente imagen en caso de error
-
-    for i in range(len(vectors)):
-        elapsed_time = time.time() - tiempo_comienzo
-        cpu_usage = get_cpu_usage()
-        memory_usage = get_memory_usage()
-
-        uso_cpu.append(cpu_usage)
-        uso_memoria.append(memory_usage)
-        time_data.append(elapsed_time)
-
-        for j in range(i + 1, len(vectors)):
-            distancia_euclidiana = np.linalg.norm(vectors[i] - vectors[j])
-            print(f'Distancia entre vector {i+1} y vector {j+1}: {distancia_euclidiana}')
 
     print(f'Total de imágenes procesadas: {len(vectors)}')
     print(f'Tiempo total de ejecución: {time.time() - tiempo_comienzo} segundos')
@@ -111,7 +97,7 @@ if __name__ == "__main__":
     # output_directory_vectors = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Vectors'
     # ruta_plot = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\cpu_usage.png'
 
-    directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
+    directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\input\Humans'
     output_directory = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba'
     output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba\Vectors'
     ruta_plot = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba'
