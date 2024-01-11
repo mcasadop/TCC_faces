@@ -8,20 +8,21 @@ from PIL import Image
 import numpy as np
 import cProfile
 import pstats
-
+import yaml
 
 def get_cpu_usage():
-    return psutil.cpu_percent(interval=1)  # Intervalo de muestreo de 1 segundo
+    return psutil.cpu_percent(interval=0.1)
 
 
 def get_memory_usage():
     process = psutil.Process(os.getpid())
-    return process.memory_info().rss / (1024 ** 2)  # Uso de memoria en MB
+    return process.memory_info().rss / (1024 ** 2)
 
 
 def main_process(tiempo_comienzo):
     archivos = [archivo for archivo in os.listdir(directorio_raiz)]
     contador = 1
+    vectors = []
     uso_cpu = []
     uso_memoria = []
     time_data = []
@@ -39,8 +40,6 @@ def main_process(tiempo_comienzo):
     )
     encoder = InceptionResnetV1(pretrained='vggface2', classify=False, device=device).eval()
 
-    vectors = []
-
     for imagen_nombre in archivos:
         print(f'Procesando: {imagen_nombre}')
         try:
@@ -50,39 +49,49 @@ def main_process(tiempo_comienzo):
 
             uso_cpu.append(cpu_usage)
             uso_memoria.append(memory_usage)
-            time_data.append(elapsed_time)  # Añadir el número de iteración a la lista de tiempo
+            time_data.append(elapsed_time)
 
-            # Construir la ruta completa de la imagen
             ruta_imagen = os.path.join(directorio_raiz, imagen_nombre)
 
-            # Abrir la imagen
             img = Image.open(ruta_imagen)
 
             # VECTORIZAR
             cara = mtcnn(img)
-            if cara is not None:  # Verificar si se detectó una cara
+            if cara is not None:
                 embedding_cara = encoder.forward(cara.reshape((1, 3, 160, 160))).detach().cpu()
                 vectors.append(embedding_cara)
-
-                # Comparar con los vectores previamente generados
-                for i in range(len(vectors) - 1):
-                    distancia_euclidiana = np.linalg.norm(vectors[i] - embedding_cara)
-                    print(f'Distancia entre vector {i+1} y vector {contador}: {distancia_euclidiana}')
-
-                # Guardar el vector en el archivo
                 nombre_archivo_vector = f'vector_{contador}.txt'
                 ruta_guardado_vector = os.path.join(output_directory_vectors, nombre_archivo_vector)
 
                 with open(ruta_guardado_vector, 'w') as file:
                     for valor in embedding_cara.numpy().flatten():
                         file.write(f'{valor} ')
-
-                # Incrementar el contador
                 contador += 1
+                
+        except ValueError as e:
+            print(f'Error en la imagen {imagen_nombre}: {str(e)}')
+            
+            ruta_imagen = os.path.join(directorio_raiz, imagen_nombre)
+            os.remove(ruta_imagen)
+
+            continue
 
         except Exception as e:
             print(f'Error en la imagen {imagen_nombre}: {str(e)}')
-            continue  # Continuar con la siguiente imagen en caso de error
+            continue 
+
+    for i in range(len(vectors)):
+        elapsed_time = time.time() - tiempo_comienzo
+        cpu_usage = get_cpu_usage()
+        memory_usage = get_memory_usage()
+
+        uso_cpu.append(cpu_usage)
+        uso_memoria.append(memory_usage)
+        time_data.append(elapsed_time)
+
+        for j in range(i + 1, len(vectors)):
+            distancia_euclidiana = np.linalg.norm(vectors[i] - vectors[j])
+            print(f'Distancia entre vector {i+1} y vector {j+1}: {distancia_euclidiana}')
 
     print(f'Total de imágenes procesadas: {len(vectors)}')
     print(f'Tiempo total de ejecución: {time.time() - tiempo_comienzo} segundos')
@@ -91,15 +100,14 @@ def main_process(tiempo_comienzo):
 
 
 if __name__ == "__main__":
-   # directorio_raiz = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Input_Prueba'
-    # output_directory = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Boxes'
-    # output_directory_vectors = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\Vectors'
-    # ruta_plot = r'C:\Users\Eduardo\Downloads\PortableGit\TCC_faces\Primera\Output_Prueba\cpu_usage.png'
 
-    directorio_raiz = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Input_Prueba'
-    output_directory = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba'
-    output_directory_vectors = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba\Vectors'
-    ruta_plot = r'D:\Users\Miguel\Documents\TCC_faces\Primera\Output_Prueba'
+    archivo_configuracion = "config.yaml"
+    with open(archivo_configuracion, "r") as archivo:
+        configuracion = yaml.safe_load(archivo)
+
+    directorio_raiz = configuracion["configuracion"]["input_path"]
+    output_directory_vectors = configuracion["configuracion"]["output_vectors"]
+    ruta_plot = configuracion["configuracion"]["output_graph"]
 
     cpu_usage_data = []
     memory_usage_data = []
@@ -110,7 +118,6 @@ if __name__ == "__main__":
     profiler.enable()
 
     try:
-        # Llamar a la función principal
         cpu_usage_data, memory_usage_data, time_data = main_process(start_time)
         print(f'Tiempo total de ejecución: {time.time() - start_time} segundos')
 
@@ -118,7 +125,6 @@ if __name__ == "__main__":
         pass
 
     finally:
-        # Gráfico comparativo de tiempos de ejecución y uso de CPU
         plt.figure(figsize=(20, 10))
         plt.subplot(1, 2, 1)
         plt.plot(time_data, cpu_usage_data, label='Uso de CPU')
@@ -127,7 +133,6 @@ if __name__ == "__main__":
         plt.title('Rendimiento de la CPU durante la ejecución del proceso principal')
         plt.legend()
 
-        # Gráfico comparativo de tiempos de ejecución y uso de memoria
         plt.subplot(1, 2, 2)
         plt.plot(time_data, memory_usage_data, label='Uso de Memoria')
         plt.xlabel('Tiempo (segundos)')

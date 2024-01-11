@@ -1,0 +1,3 @@
+configuracion:
+  input_path: "D:\\Users\\Miguel\\Documents\\TCC_faces\\Segunda\\input\\Humans"
+  output_vectors: "D:\\Users\\Miguel\\Documents\\TCC_faces\\Segunda\\output\\Vectors"

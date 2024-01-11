@@ -1,0 +1,4 @@
+configuracion:
+  input_path: "D:\\Users\\Miguel\\Documents\\TCC_faces\\Primera\\input\\Humans"
+  output_vectors: "D:\\Users\\Miguel\\Documents\\TCC_faces\\Primera\\Output_Prueba\\Vectors"
+  output_graph: "D:\\Users\\Miguel\\Documents\\TCC_faces\\Primera\\Graficos_rendimiento"
