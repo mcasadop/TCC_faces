@@ -11,7 +11,7 @@ El usuario debe tener el entorno Python instalado en su PC.
 
 ### Paso 1: 
 Lo primero de todo se debe copiar el repositorio mediante el comando:  
-> git clone https://github.com/mcasadop/TCC_faces/Primera
+> git clone https://github.com/mcasadop/TCC_faces
 
 ### Paso 2: 
 Posicionarse en la carpeta en la que queremos tener nuestro proyecto e instalar las bibliotecas necesarias para su correcta ejecución: 
