@@ -17,6 +17,14 @@ Lo primero de todo se debe copiar el repositorio mediante el comando:
 Posicionarse en la carpeta en la que queremos tener nuestro proyecto e instalar las bibliotecas necesarias para su correcta ejecución: 
 > pip install -r requierements.txt
 
+### Paso 3: 
+Configurar los directorios dentro del archivo config.yaml de cada carpeta (Primera y Segunda). Esto se hace para evitar posibles incompatibilidades de formato dependiendo del sistema operativo utilizado.
+Se deben añadir en:
+
+__input_path__ la ruta a /input/Humans
+__output_vectors__ la ruta a /output/Vectors
+__output_graph__ la ruta a /Graficos_rendimiento (solo en /Primera)
+
 ## PRIMERA PARTE (OPTIMIZACIÓN SECUENCIAL)
 ### Instrucciones de Uso
 Nuestro trabajo consiste en un script inicial (main_script1.py) y dos optimizaciones secuenciales sobre el mismo (main_script2.py y main_script3.py).
@@ -31,5 +39,5 @@ Al ejecutar cualquiera de estos scripts se generará en la carpeta /Ouput los gr
 
 ## SEGUNDA PARTE (OPTIMIZACIÓN EN PARALELO)
 ### Instrucciones de Uso
-Esta segunda parte solo consta de un script, para su ejecucion debemos ejecutar:
+Esta segunda parte solo consta de un script, para su ejecucion debemos posicionarnos en el directorio /Segunda:
 > python3 ./paralelo.py
